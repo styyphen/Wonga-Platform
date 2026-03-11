@@ -1,0 +1,17 @@
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+artifacts/
+.nuke/temp/
+.DS_Store
+*.user
+*.suo
+*.swp
+TestResults/
+coverage/
+node_modules/
+dist/
+build-output/
+
