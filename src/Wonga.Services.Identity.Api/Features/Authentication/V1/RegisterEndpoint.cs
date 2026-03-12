@@ -11,25 +11,35 @@ internal static class RegisterEndpoint
             IdentityApplicationService identityApplicationService,
             CancellationToken cancellationToken) =>
         {
-            var result = await identityApplicationService.RegisterAsync(
-                new RegisterUserCommand(request.FirstName, request.LastName, request.Email, request.Password),
-                cancellationToken);
-
-            if (!result.Success)
+            try
             {
-                return Results.ValidationProblem(new Dictionary<string, string[]>
-                {
-                    ["registration"] = new[] { result.Error ?? "Registration failed." }
-                });
-            }
+                var result = await identityApplicationService.RegisterAsync(
+                    new RegisterUserCommand(request.FirstName, request.LastName, request.Email, request.Password),
+                    cancellationToken);
 
-            return Results.Created(
-                $"/users/{result.UserId}",
-                new
+                if (!result.Success)
                 {
-                    userId = result.UserId,
-                    email = request.Email.Trim().ToLowerInvariant()
-                });
+                    return Results.ValidationProblem(new Dictionary<string, string[]>
+                    {
+                        ["registration"] = new[] { result.Error ?? "Registration failed." }
+                    });
+                }
+
+                return Results.Created(
+                    $"/users/{result.UserId}",
+                    new
+                    {
+                        userId = result.UserId,
+                        email = request.Email.Trim().ToLowerInvariant()
+                    });
+            }
+            catch (HttpRequestException)
+            {
+                return Results.Problem(
+                    title: "Profile provisioning failed.",
+                    detail: "The user profile service could not be reached.",
+                    statusCode: StatusCodes.Status502BadGateway);
+            }
         });
 
         return endpoints;

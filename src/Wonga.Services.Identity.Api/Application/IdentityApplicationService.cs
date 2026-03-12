@@ -6,6 +6,7 @@ namespace Wonga.Services.Identity.Application;
 
 public sealed class IdentityApplicationService(
     IIdentityRepository identityRepository,
+    IUserProfileProvisioner userProfileProvisioner,
     AccessTokenOptions accessTokenOptions)
 {
     private static readonly TimeSpan DefaultAccessTokenLifetime = TimeSpan.FromHours(1);
@@ -35,6 +36,22 @@ public sealed class IdentityApplicationService(
         };
 
         await identityRepository.CreateUserAsync(user, cancellationToken);
+
+        try
+        {
+            await userProfileProvisioner.ProvisionAsync(
+                user.Id,
+                command.FirstName.Trim(),
+                command.LastName.Trim(),
+                normalizedEmail,
+                cancellationToken);
+        }
+        catch
+        {
+            await identityRepository.DeleteUserAsync(user.Id, cancellationToken);
+            throw;
+        }
+
         return new RegisterUserResult(true, user.Id, null);
     }
 

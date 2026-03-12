@@ -19,6 +19,15 @@ builder.Services.AddSingleton(new NpgsqlDataSourceBuilder(identityDbConnectionSt
 builder.Services.AddSingleton(accessTokenOptions);
 builder.Services.AddSingleton<IdentityDatabaseInitializer>();
 builder.Services.AddScoped<IIdentityRepository, IdentityRepository>();
+builder.Services.AddHttpClient<IUserProfileProvisioner, UserProfileProvisioner>((serviceProvider, httpClient) =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var baseUrl =
+        configuration["Services:UserProfileBaseUrl"]
+        ?? "http://user-profile-service:8080";
+
+    httpClient.BaseAddress = new Uri(baseUrl);
+});
 builder.Services.AddScoped<IdentityApplicationService>();
 
 var app = builder.Build();
