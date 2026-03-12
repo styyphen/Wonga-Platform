@@ -1,4 +1,5 @@
 using Npgsql;
+using Wonga.Shared.Security;
 using Wonga.Services.Identity.Api.Features.Authentication.V1;
 using Wonga.Services.Identity.Application;
 using Wonga.Services.Identity.Infrastructure;
@@ -9,10 +10,13 @@ var identityDbConnectionString =
     builder.Configuration.GetConnectionString("IdentityDb")
     ?? throw new InvalidOperationException("Connection string 'IdentityDb' is required.");
 
+var accessTokenOptions = AccessTokenOptionsConfiguration.Build(builder.Configuration);
+
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpLogging(_ => { });
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(new NpgsqlDataSourceBuilder(identityDbConnectionString).Build());
+builder.Services.AddSingleton(accessTokenOptions);
 builder.Services.AddSingleton<IdentityDatabaseInitializer>();
 builder.Services.AddScoped<IIdentityRepository, IdentityRepository>();
 builder.Services.AddScoped<IdentityApplicationService>();
@@ -35,6 +39,7 @@ app.MapGet("/", () => Results.Ok(new
 }));
 
 app.MapRegisterEndpoint();
+app.MapLoginEndpoint();
 app.MapHealthChecks("/health");
 
 app.Run();

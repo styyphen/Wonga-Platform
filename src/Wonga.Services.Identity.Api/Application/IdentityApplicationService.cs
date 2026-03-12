@@ -1,10 +1,15 @@
 using System.Net.Mail;
+using Wonga.Shared.Security;
 using Wonga.Services.Identity.Domain;
 
 namespace Wonga.Services.Identity.Application;
 
-public sealed class IdentityApplicationService(IIdentityRepository identityRepository)
+public sealed class IdentityApplicationService(
+    IIdentityRepository identityRepository,
+    AccessTokenOptions accessTokenOptions)
 {
+    private static readonly TimeSpan DefaultAccessTokenLifetime = TimeSpan.FromHours(1);
+
     public async Task<RegisterUserResult> RegisterAsync(RegisterUserCommand command, CancellationToken cancellationToken)
     {
         if (!IsValidRegistration(command, out var validationError))
@@ -31,6 +36,29 @@ public sealed class IdentityApplicationService(IIdentityRepository identityRepos
 
         await identityRepository.CreateUserAsync(user, cancellationToken);
         return new RegisterUserResult(true, user.Id, null);
+    }
+
+    public async Task<LoginUserResult> LoginAsync(
+        LoginUserCommand command,
+        TimeSpan? sessionLifetime,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(command.Email) || string.IsNullOrWhiteSpace(command.Password))
+        {
+            return new LoginUserResult(false, null, null, "Email and password are required.");
+        }
+
+        var normalizedEmail = command.Email.Trim().ToLowerInvariant();
+        var user = await identityRepository.GetUserByEmailAsync(normalizedEmail, cancellationToken);
+        if (user is null || !PasswordSecurity.VerifyPassword(command.Password, user.PasswordHash, user.PasswordSalt))
+        {
+            return new LoginUserResult(false, null, null, "Invalid email or password.");
+        }
+
+        var utcNow = DateTimeOffset.UtcNow;
+        var lifetime = sessionLifetime ?? DefaultAccessTokenLifetime;
+        var accessToken = AccessTokenFactory.Create(user.Id, user.Email, accessTokenOptions, utcNow, lifetime);
+        return new LoginUserResult(true, accessToken, utcNow.Add(lifetime), null);
     }
 
     private static bool IsValidRegistration(RegisterUserCommand command, out string? validationError)
