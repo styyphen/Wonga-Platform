@@ -1,4 +1,5 @@
 using Scalar.AspNetCore;
+using Wonga.Gateway.Api.Features.Identity.V1;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +7,15 @@ builder.Services.AddProblemDetails();
 builder.Services.AddHttpLogging(_ => { });
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenApi("v1");
+builder.Services.AddHttpClient("identity-service", (serviceProvider, httpClient) =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var baseUrl =
+        configuration["Gateway:Routes:Identity"]
+        ?? "http://identity-service:8080";
+
+    httpClient.BaseAddress = new Uri(baseUrl);
+});
 
 var app = builder.Build();
 
@@ -27,13 +37,19 @@ app.MapGet("/", (IWebHostEnvironment environment) => Results.Ok(new
 {
     service = "gateway",
     status = "initialized",
-    routes = Array.Empty<string>(),
+    routes = new[]
+    {
+        "/identity/register",
+        "/identity/login"
+    },
     developerUi = environment.IsDevelopment()
         ? new[] { "/scalar", "/openapi/v1.json" }
         : []
 }))
 .ExcludeFromDescription();
 
+app.MapRegisterEndpoint();
+app.MapLoginEndpoint();
 app.MapHealthChecks("/health").ExcludeFromDescription();
 
 app.Run();
