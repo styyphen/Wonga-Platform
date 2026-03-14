@@ -26,6 +26,34 @@ internal static class ProxyHttpResponseExtensions
         }
     }
 
+    internal static async Task<IResult> ProxyAuthorizedGetAsync(
+        this IHttpClientFactory httpClientFactory,
+        string clientName,
+        string path,
+        HttpContext httpContext,
+        string serviceName,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, path);
+            if (httpContext.Request.Headers.TryGetValue("Authorization", out var authorizationHeader))
+            {
+                request.Headers.TryAddWithoutValidation("Authorization", authorizationHeader.ToString());
+            }
+
+            using var response = await httpClientFactory
+                .CreateClient(clientName)
+                .SendAsync(request, cancellationToken);
+
+            return await response.ToResultAsync(cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            return ToServiceUnavailableResult(serviceName);
+        }
+    }
+
     internal static async Task<IResult> ToResultAsync(this HttpResponseMessage response, CancellationToken cancellationToken)
     {
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
