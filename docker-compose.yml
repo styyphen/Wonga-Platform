@@ -1,0 +1,79 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: wonga-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wonga
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d wonga" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  gateway:
+    build:
+      context: .
+      dockerfile: eng/docker/service.Dockerfile
+      args:
+        PROJECT_PATH: src/Wonga.Gateway.Api/Wonga.Gateway.Api.csproj
+        ENTRY_DLL: Wonga.Gateway.Api.dll
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      Gateway__Routes__Identity: http://identity-service:8080
+      Gateway__Routes__UserProfile: http://user-profile-service:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      identity-service:
+        condition: service_started
+      user-profile-service:
+        condition: service_started
+
+  identity-service:
+    build:
+      context: .
+      dockerfile: eng/docker/service.Dockerfile
+      args:
+        PROJECT_PATH: src/Wonga.Services.Identity.Api/Wonga.Services.Identity.Api.csproj
+        ENTRY_DLL: Wonga.Services.Identity.Api.dll
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__IdentityDb: Host=postgres;Port=5432;Database=wonga;Username=postgres;Password=postgres
+      Services__UserProfileBaseUrl: http://user-profile-service:8080
+      Auth__AccessToken__Issuer: wonga-platform
+      Auth__AccessToken__Audience: wonga-platform-clients
+      Auth__AccessToken__SigningKey: change-this-development-signing-key-123456
+      Auth__AccessToken__LifetimeMinutes: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  user-profile-service:
+    build:
+      context: .
+      dockerfile: eng/docker/service.Dockerfile
+      args:
+        PROJECT_PATH: src/Wonga.Services.UserProfile.Api/Wonga.Services.UserProfile.Api.csproj
+        ENTRY_DLL: Wonga.Services.UserProfile.Api.dll
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__UserProfileDb: Host=postgres;Port=5432;Database=wonga;Username=postgres;Password=postgres
+      Auth__AccessToken__Issuer: wonga-platform
+      Auth__AccessToken__Audience: wonga-platform-clients
+      Auth__AccessToken__SigningKey: change-this-development-signing-key-123456
+      Auth__AccessToken__LifetimeMinutes: 60
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

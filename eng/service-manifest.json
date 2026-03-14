@@ -1,0 +1,20 @@
+{
+  "services": [
+    {
+      "name": "platform-gateway",
+      "project": "src/Gateway/Wonga.Gateway.Api/Wonga.Gateway.Api.csproj",
+      "image": "wonga/platform-gateway"
+    },
+    {
+      "name": "identity-service",
+      "project": "src/Services/Identity/Wonga.Services.Identity.Api/Wonga.Services.Identity.Api.csproj",
+      "image": "wonga/identity-service"
+    },
+    {
+      "name": "user-profile-service",
+      "project": "src/Services/UserProfile/Wonga.Services.UserProfile.Api/Wonga.Services.UserProfile.Api.csproj",
+      "image": "wonga/user-profile-service"
+    }
+  ]
+}
+
