@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Wonga.Gateway.Api/Wonga.Gateway.Api.csproj" />
+    <Project Path="src/Wonga.Services.Identity.Api/Wonga.Services.Identity.Api.csproj" />
+    <Project Path="src/Wonga.Services.UserProfile.Api/Wonga.Services.UserProfile.Api.csproj" />
+    <Project Path="src/Wonga.Shared.Security/Wonga.Shared.Security.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Wonga.ArchitectureTests/Wonga.ArchitectureTests.csproj" />
+    <Project Path="tests/Wonga.IntegrationTests/Wonga.IntegrationTests.csproj" />
+    <Project Path="tests/Wonga.Services.Identity.UnitTests/Wonga.Services.Identity.UnitTests.csproj" />
+    <Project Path="tests/Wonga.Services.UserProfile.UnitTests/Wonga.Services.UserProfile.UnitTests.csproj" />
+  </Folder>
+</Solution>
