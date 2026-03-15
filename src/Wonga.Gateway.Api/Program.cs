@@ -1,7 +1,7 @@
 using Scalar.AspNetCore;
 using Wonga.Gateway.Api.Features.Identity.V1;
-using Wonga.Gateway.Api.Features.Users.V1;
 using Wonga.Gateway.Api.OpenApi;
+using Wonga.Gateway.Api.Features.Users.V1;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +21,7 @@ builder.Services.AddHttpClient("identity-service", (serviceProvider, httpClient)
 
     httpClient.BaseAddress = new Uri(baseUrl);
 });
+
 builder.Services.AddHttpClient("user-profile-service", (serviceProvider, httpClient) =>
 {
     var configuration = serviceProvider.GetRequiredService<IConfiguration>();

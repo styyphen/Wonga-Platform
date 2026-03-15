@@ -26,9 +26,10 @@ public sealed class IdentityApplicationService(
         }
 
         var (hash, salt) = PasswordSecurity.HashPassword(command.Password);
+        var userId = Guid.NewGuid();
         var user = new IdentityUser
         {
-            Id = Guid.NewGuid(),
+            Id = userId,
             Email = normalizedEmail,
             PasswordHash = hash,
             PasswordSalt = salt,
@@ -40,7 +41,7 @@ public sealed class IdentityApplicationService(
         try
         {
             await userProfileProvisioner.ProvisionAsync(
-                user.Id,
+                userId,
                 command.FirstName.Trim(),
                 command.LastName.Trim(),
                 normalizedEmail,
@@ -48,11 +49,11 @@ public sealed class IdentityApplicationService(
         }
         catch
         {
-            await identityRepository.DeleteUserAsync(user.Id, cancellationToken);
+            await identityRepository.DeleteUserAsync(userId, cancellationToken);
             throw;
         }
 
-        return new RegisterUserResult(true, user.Id, null);
+        return new RegisterUserResult(true, userId, null);
     }
 
     public async Task<LoginUserResult> LoginAsync(
